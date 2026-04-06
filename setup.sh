@@ -79,6 +79,16 @@ install_deps() {
     log "Running as root, using --unsafe-perm"
   fi
 
+  # On macOS, ensure C++ headers are findable (needed for better-sqlite3 on newer CLT)
+  if [ "$PLATFORM" = "macos" ] && command -v xcrun >/dev/null 2>&1; then
+    local sdk_path
+    sdk_path=$(xcrun --show-sdk-path 2>/dev/null) || true
+    if [ -n "$sdk_path" ] && [ -d "$sdk_path/usr/include/c++/v1" ]; then
+      export CXXFLAGS="-isysroot $sdk_path -I$sdk_path/usr/include/c++/v1"
+      log "Set CXXFLAGS for macOS SDK: $CXXFLAGS"
+    fi
+  fi
+
   log "Running npm ci $npm_flags"
   if npm ci $npm_flags >> "$LOG_FILE" 2>&1; then
     DEPS_OK="true"
